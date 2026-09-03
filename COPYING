@@ -1,0 +1,43 @@
+﻿DB Connection Licensing Terms
+
+1. Base License
+
+The db-connection software ("DB Connection") is licensed under the GNU Affero
+General Public License, version 3 ("AGPLv3"). The complete, unmodified text of
+the AGPLv3 is in the LICENSE file distributed with DB Connection.
+
+Unless a file or component states otherwise, DB Connection source code is
+covered by the AGPLv3.
+
+2. Relationship to DVT
+
+DB Connection is distributed as a standalone software library. It may be used by
+DVT Core and by other software, but it is not itself DVT Core merely because DVT
+uses or distributes it.
+
+The DVT Extension Exception published with DVT Core is an additional permission
+for qualifying DVT Extensions interacting with DVT Core through documented DVT
+Extension interfaces. That exception does not change the license of DB
+Connection and is not incorporated into these terms.
+
+3. Use in Other Software
+
+These terms grant no additional exception from the AGPLv3 for software that
+imports, links to, embeds, modifies, or otherwise combines with DB Connection.
+The rights and obligations applicable to such use are governed by the AGPLv3 and
+applicable law.
+
+Mere aggregation of DB Connection with separate and independent works is governed
+by the aggregation provisions of the AGPLv3.
+
+4. Third-Party Components
+
+Separately licensed third-party components, dependencies, and other materials are
+governed by their respective licenses. Nothing in these terms relicenses those
+components under the AGPLv3.
+
+5. No Trademark Grant
+
+Neither the AGPLv3 nor these terms grant rights to use any project or company
+name, trademark, service mark, or logo, except to the extent such use is
+permitted or required by applicable law.

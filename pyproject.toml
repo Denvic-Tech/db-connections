@@ -1,0 +1,289 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "denvic-db-connection"
+version = "1.1.6"
+authors = [
+    { name = "preposition17" },
+    { name = "frankmurrey" },
+    { name = "fonartur" },
+]
+description = "Extensible Python library for storing, validating, exposing, and checking service connection definitions."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE", "COPYING"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Framework :: Pydantic :: 2",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "fastapi>=0.115.0",
+    "pydantic>=2.11.0",
+    "PyYAML>=6.0.2",
+    "pystructor>=0.2.0",
+    "aiosqlite>=0.20.0",
+    "clickhouse-sqlalchemy>=0.3.0",
+    "SQLAlchemy>=2.0.0",
+    "sqlmodel>=0.0.24",
+    "kafka-python>=2.2.15",
+    "makefun>=1.16.0",
+    "cryptography>=45.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Denvic-Tech/db-connections"
+Repository = "https://github.com/Denvic-Tech/db-connections"
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "pylint",
+    "pylint-per-file-ignores",
+]
+
+drivers = [
+    "psycopg[binary]>=3.2.3",
+    "pymysql>=1.1.1",
+    "pyodbc>=5.2.0",
+    'oracledb>=3.4.1'
+]
+
+async = [
+    "sqlalchemy[asyncio]>=2.0.41",
+    "asyncpg>=0.30.0",
+    "aiomysql>=0.2.0",
+    "aioodbc>=0.5.0",
+    "aiokafka>=0.12.0",
+]
+
+test = [
+    "pytest>=7.0.0",
+    "pytest-mock>=3.12.0"
+]
+
+s3 = [
+    "boto3>=1.34.130",
+]
+# Дополнительный extra зарезервирован под будущую async-реализацию на aioboto3.
+s3_async = [
+    "aioboto3>=13.1.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["db_connection*"]
+
+[tool.pytest]
+strict_markers = true
+python_files = "tests/test_*.py"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "docker_required: marks tests as requiring running docker containers",
+]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+force-exclude = true
+respect-gitignore = true
+show-fixes = true
+output-format = "grouped"
+src = ["."]
+
+extend-exclude = [
+    ".venv",
+    ".venv3.13",
+    "venv",
+    "db_connection/compat",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
+    "tmp",
+    "trash",
+    "alembic/versions",
+    "migrations",
+    "node_modules",
+]
+
+[tool.ruff.lint]
+select = [
+    # Базовая корректность
+    "E",      # pycodestyle errors
+    "F",      # Pyflakes
+
+    # Импорты
+    "I",      # isort
+
+    # Модернизация синтаксиса под target-version
+    "UP",     # pyupgrade
+
+    # Частые баги и сомнительные места
+    "B",      # flake8-bugbear
+    "SIM",    # flake8-simplify
+    "C4",     # flake8-comprehensions
+    "PIE",    # flake8-pie
+    "RET",    # flake8-return
+    "ARG",    # flake8-unused-arguments
+
+    # Логирование / exceptions / pathlib / print
+    "G",      # flake8-logging-format
+    "TRY",    # tryceratops
+    "PTH",    # flake8-use-pathlib
+    "T20",    # flake8-print
+
+    # Часть pylint-правил внутри Ruff
+    "PL",
+
+    # Собственные правила Ruff
+    "RUF",
+]
+# Отключить E501 (ограничение на длину строки, если не хочешь им пользоваться)
+ignore = [
+    # Форматтер сам занимается строками; E501 часто даёт шум.
+    "E501",
+
+    # Иногда слишком душнит исключения, особенно в application/service layer.
+    "TRY003",  # long exception messages outside exception class
+    "TRY301",  # abstract raise to inner function
+
+    # Часто мешает в FastAPI/SQLAlchemy/Pydantic, где есть magic values.
+    "PLR2004",
+
+    # Можно включить позже, когда проект уже чистый.
+    "PLR0913", # too many arguments
+    "PLR0912", # too many branches
+    "PLR0915", # too many statements
+
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+
+fixable = ["ALL"]
+unfixable = [
+    "F401", # unused imports — иногда это re-export в __init__.py
+    "B",    # bugbear лучше смотреть глазами
+]
+
+# TODO/FIXME/HACK не считать случайным мусором.
+task-tags = ["TODO", "FIXME", "HACK", "XXX"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    "F401", # re-export
+]
+
+"tests/**/*.py" = [
+    "S101",    # assert в тестах норм
+    "ARG001",  # unused fixture argument
+    "ARG002",
+    "ARG003",
+    "ARG005",
+    "PLR2004", # magic values в тестах ок
+    "T20",     # print иногда удобно при отладке тестов
+]
+
+"scripts/**/*.py" = [
+    "T20",     # print в скриптах часто ок
+    "INP001",  # scripts могут быть без package __init__.py
+]
+
+"alembic/**/*.py" = [
+    "INP001",
+]
+
+"migrations/**/*.py" = [
+    "INP001",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+# Полезно, если в docstring есть Python-примеры.
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "db_connection",
+]
+
+combine-as-imports = true
+
+[tool.pylint.main]
+py-version = "3.13"
+load-plugins = [
+    "tools.pylint_plugins.no_large_inline_collections",
+    "pylint_per_file_ignores",
+]
+ignore-paths = [
+    "^tests/.*$",
+    "^.*/tests/.*$",
+]
+
+[tool.pylint.messages_control]
+disable = [
+    "too-many-instance-attributes",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-branches",
+    "too-many-positional-arguments",
+    "too-many-statements",
+    "too-many-return-statements",
+    "broad-exception-caught",
+    "import-outside-toplevel",
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "line-too-long",
+    "abstract-method",
+    "too-few-public-methods",
+    "duplicate-code",
+]
+
+[tool.pylint-per-file-ignores]
+"db_connection/__init__.py" = "large-inline-collection"
+"db_connection/domain/__init__.py" = "large-inline-collection"
+"db_connection/application/validation.py" = "large-inline-collection"
+"db_connection/compat/runtime_bridge.py" = "large-inline-collection"
+"db_connection/connectors/sql.py" = "large-inline-collection"
+"db_connection/fastapi/extension.py" = "large-inline-collection"
+"db_connection/fastapi/mapper.py" = "large-inline-collection"
+"db_connection/fastapi/schema_builders.py" = "large-inline-collection"
+"db_connection/registry/defaults.py" = "large-inline-collection"
+"tests/" = "large-inline-collection"
+"tools/" = "large-inline-collection,mixed-line-endings"
+"scripts/" = "large-inline-collection,mixed-line-endings"
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint."no-large-inline-collections"]
+max-inline-collection-items = 2
+large-inline-collection-types = ["list", "tuple", "set", "dict"]
+large-inline-collection-ignore-contexts = [
+    "assignment",
+    "constant-assignment",
+    "assignment-target",
+    "type-annotation",
+]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+show_error_codes = true
+warn_unused_configs = true
+ignore_missing_imports = true

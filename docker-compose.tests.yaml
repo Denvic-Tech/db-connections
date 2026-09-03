@@ -1,0 +1,155 @@
+services:
+  postgres_test_db:
+    image: postgres:15.3-alpine
+    container_name: postgres_db_conn_test
+    environment:
+      POSTGRES_USER: ${POSTGRES_TEST_USER:-testuser}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-testpassword}
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-testdb}
+    ports:
+      - "${POSTGRES_TEST_PORT:-54321}:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_TEST_USER:-testuser} -d ${POSTGRES_TEST_DB:-testdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mysql_test_db:
+    image: mysql:8.0
+    container_name: mysql_db_conn_test
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_TEST_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_TEST_DB:-testdb}
+      MYSQL_USER: ${MYSQL_TEST_USER:-testuser}
+      MYSQL_PASSWORD: ${MYSQL_TEST_PASSWORD:-testpassword}
+    ports:
+      - "${MYSQL_TEST_PORT:-33061}:3306"
+    volumes:
+      - mysql_test_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  clickhouse_test_db:
+    image: clickhouse/clickhouse-server:24.11
+    container_name: ch_db_conn_test
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_TEST_USER:-testuser}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_TEST_PASSWORD:-testpassword}
+      CLICKHOUSE_DB: ${CLICKHOUSE_TEST_DB:-testdb}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1 # Необходимо для создания пользователей/БД через SQL
+    ports:
+      - "${CLICKHOUSE_TEST_HTTP_PORT:-8124}:8123" # HTTP
+      - "${CLICKHOUSE_TEST_NATIVE_PORT:-9001}:9000" # Native TCP
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - clickhouse_test_data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "-u", "${CLICKHOUSE_TEST_USER:-testuser}", "--password", "${CLICKHOUSE_TEST_PASSWORD:-testpassword}", "-q", "SELECT 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mssql_test_db:
+    image: mcr.microsoft.com/mssql/server:2022-CU12-ubuntu-22.04
+    container_name: mssql_db_conn_test
+    ports:
+      - "${MSSQL_TEST_PORT:-11433}:1433"
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_TEST_PASSWORD:-Str0ngP@ss!}
+      ACCEPT_EULA: "Y"
+
+  redpanda_test:
+    # Использование указанной версии Redpanda
+    image: redpandadata/redpanda:v24.2.21
+    container_name: redpanda_db_conn_test
+    # Команда запуска Redpanda с настройками
+    command:
+      - redpanda
+      - start
+      - --smp
+      - "1" # Количество ядер процессора
+      - --memory
+      - 256M # Максимальное использование памяти
+      - --reserve-memory
+      - 0M # Не резервировать память при старте
+      - --overprovisioned # Запуск в режиме разработки/тестирования
+      - --node-id
+      - "0" # ID узла в кластере (для одиночного узла - 0)
+      # Настройка Kafka слушателей внутри контейнера
+      # PLAINTEXT на порту 29092 для внутренней сети Docker
+      # OUTSIDE на порту 9092 для доступа с хост машины
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9093
+      # Настройка адресов для анонсирования клиентам
+      # redpanda:29092 для клиентов внутри сети Docker (используя имя сервиса)
+      # localhost:9092 для клиентов на хост машине
+      - --advertise-kafka-addr
+      - PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9093
+      # Настройка Pandaproxy (Kafka REST API) слушателей
+      - --pandaproxy-addr
+      - PLAINTEXT://0.0.0.0:28082,OUTSIDE://0.0.0.0:8082
+      # Настройка адресов для анонсирования Pandaproxy
+      - --advertise-pandaproxy-addr
+      - PLAINTEXT://redpanda:28082,OUTSIDE://localhost:8082
+      # Настройка RPC слушателя для внутренних нужд Redpanda
+      - --rpc-addr
+      - 0.0.0.0:33145
+      # Настройка адреса для анонсирования RPC
+      - --advertise-rpc-addr
+      - redpanda:33145
+    ports:
+      - "8082:8082" # Pandaproxy (Kafka REST API) для доступа с хоста
+      - "9093:9093" # Kafka API (OUTSIDE listener) для доступа с хоста
+      - "9644:9644" # Redpanda Admin API для доступа с хоста (используется консолью)
+      - "28082:28082" # Pandaproxy (Kafka REST API) для внутренней сети Docker (необязательно пробрасывать на хост, но оставлено для полноты)
+      - "29092:29092" # Kafka API (PLAINTEXT listener) для внутренней сети Docker (необязательно пробрасывать на хост, но оставлено для полноты)
+    volumes:
+      - ${REDPANDA_DATA_VOLUME_PATH:-./data/redpandadata}:/var/lib/redpanda/data
+    restart: unless-stopped
+
+  minio_test:
+      image: minio/minio:latest
+      container_name: minio_db_conn_test
+      restart: unless-stopped
+      ports:
+          - "${MINIO_TEST_PORT:-39600}:9000"
+          - "${MINIO_ADMIN_TEST_PORT:-39601}:9001"
+      environment:
+          MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+          MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      command: server /data --console-address ":9001"
+      volumes:
+          - ${MINIO_VOLUME_PATH:-./data/minio}:/data
+          - ./data/minio/minio-init.sh:/docker-entrypoint-init.d/minio-init.sh:ro
+          - ./data/minio/cors.json:/etc/minio/cors.json:ro
+          - ./data/minio/certs:/root/.minio/certs:ro
+
+  oracle_test:
+    image: gvenzl/oracle-xe:21.3.0-slim
+    container_name: oracle_test
+    ports:
+      - "1521:1521"
+    environment:
+      - ORACLE_PASSWORD=oracle
+      - APP_USER=test_user
+      - APP_USER_PASSWORD=test_password
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    restart: unless-stopped
+    shm_size: 2g
+
+
+volumes:
+  oracle-data:
+  postgres_test_data:
+  mysql_test_data:
+  clickhouse_test_data:
