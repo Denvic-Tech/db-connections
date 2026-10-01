@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "denvic-db-connection"
-version = "1.1.6"
+version = "1.2.0"
 authors = [
     { name = "preposition17" },
     { name = "frankmurrey" },
