@@ -116,52 +116,56 @@ Docs and examples:
 Build and config:
 
 - `pyproject.toml`: packaging, dependencies, pytest, Ruff, mypy config.
-- `requirements.txt`: pinned local/dev toolchain, includes `build`, `twine`,
-  `ruff`, `uvicorn`, pytest tooling.
+- `uv.lock`: resolved dependency versions; commit alongside `pyproject.toml`.
+- `.python-version`: Python 3.13 for local development (library support remains 3.11+).
+- `pyproject.toml` dependency group `dev`: local drivers, async/S3 adapters,
+  pytest tooling, linters, `uvicorn`, and `twine`.
 - `scripts/upload_builds.py`: artifact upload helper.
 - `scripts/analysis/ruff_check_changed.py`: scoped Ruff helper.
 - `scripts/analysis/pylint_check_changed.py`: scoped Pylint helper.
 
 ## Development commands
 
-Use the repository virtual environment, not system Python.
+Use uv from the repository root. `uv run` selects the repository `.venv`;
+manual activation and system Python are not needed.
 
 Install dependencies:
 
-- `.\.venv\Scripts\python.exe -m pip install -e .[drivers,async,test,s3]`
-  from `README.md` and `pyproject.toml`.
-- `.\.venv\Scripts\python.exe -m pip install -r requirements.txt` for the
-  pinned full dev toolchain in `requirements.txt`.
+- `uv sync --locked` installs the project in editable mode and the default
+  `dev` group, including all existing public extras.
+- Use `uv add <package>` for runtime dependencies and `uv add --dev <package>`
+  for development tools.
+- After editing `pyproject.toml`, run `uv lock` and commit both files.
+- Upgrade deliberately with `uv lock --upgrade`, then `uv sync --locked`.
 
 Run tests:
 
-- `.\.venv\Scripts\python.exe -m pytest`
-- `.\.venv\Scripts\python.exe -m pytest -m "not docker_required"`
-- `.\.venv\Scripts\python.exe -m pytest tests\test_http_api.py`
-- `.\.venv\Scripts\python.exe -m pytest tests\test_service_dispatch.py::test_sync_connector_dispatch`
+- `uv run --locked pytest`
+- `uv run --locked pytest -m "not docker_required"`
+- `uv run --locked pytest tests/test_http_api.py`
+- `uv run --locked pytest tests/test_service_dispatch.py::test_sync_connector_dispatch`
 
 Lint:
 
-- `.\.venv\Scripts\python.exe scripts/analysis/ruff_check_changed.py`
-- `.\.venv\Scripts\python.exe scripts/analysis/pylint_check_changed.py`
+- `uv run --locked python scripts/analysis/ruff_check_changed.py`
+- `uv run --locked python scripts/analysis/pylint_check_changed.py`
 
 Format:
 
-- `.\.venv\Scripts\ruff.exe format .`
+- `uv run --locked ruff format .`
 
 Type checking:
 
-- Needs confirmation: `pyproject.toml` contains `[tool.mypy]`, but `mypy` is
-  not declared in `requirements.txt` and `.\.venv\Scripts\python.exe -m mypy`
-  is not currently available in this workspace.
+- `pyproject.toml` contains `[tool.mypy]`, but `mypy` is not part of the
+  development dependency group.
 
 Build:
 
-- `.\.venv\Scripts\python.exe -m build`
+- `uv build`
 
 Run demo API:
 
-- `.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 3000`
+- `uv run --locked uvicorn app.main:app --reload --port 3000`
 
 ## Coding conventions
 
@@ -210,9 +214,9 @@ Run demo API:
 - Add regression tests whenever changing validation rules, connector defaults,
   public serialization, registry behavior, builder behavior, or compat bridging.
 - After changes, run the smallest relevant command first. For example:
-  - `.\.venv\Scripts\python.exe -m pytest tests\test_service_dispatch.py`
-  - `.\.venv\Scripts\python.exe -m pytest tests\test_http_api.py`
-  - `.\.venv\Scripts\python.exe -m pytest tests\test_compat_runtime_bridge.py`
+  - `uv run --locked pytest tests\test_service_dispatch.py`
+  - `uv run --locked pytest tests\test_http_api.py`
+  - `uv run --locked pytest tests\test_compat_runtime_bridge.py`
 - If docker-backed behavior is involved, run the appropriate docker-marked tests
   or state clearly that they were not run.
 

@@ -55,7 +55,7 @@ def ensure_twine_available() -> None:
     if importlib.util.find_spec("twine") is None:
         raise UploadError(
             "Twine is required to publish to PyPI. Install it with "
-            "'python -m pip install twine' in the project virtual environment."
+            "'uv sync --locked' from the repository root."
         )
 
 

@@ -42,14 +42,26 @@ global router mutated shared module state.
 Install directly from GitHub:
 
 ```bash
-python -m pip install git+https://github.com/Denvic-Tech/db-connections.git
+uv add git+https://github.com/Denvic-Tech/db-connections.git
 ```
 
-For local development with database drivers, async adapters, and test tooling:
+For local development, install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+and run from the repository root:
 
 ```bash
-python -m pip install -e .[drivers,async,test,s3]
+uv sync --locked
 ```
+
+`uv sync` creates or updates `.venv` and installs the library in editable mode.
+The default `dev` group includes database drivers, async adapters, S3, tests,
+linters, the demo API, and publishing tools. `.python-version` selects Python 3.13
+for development; the library still supports Python 3.11+.
+
+Dependencies are declared in `pyproject.toml`; exact versions are recorded in
+`uv.lock`. Commit both files. After editing dependencies, run `uv lock`;
+to upgrade deliberately, run `uv lock --upgrade`, then `uv sync --locked`.
+Use `uv add` for dependencies and `uv add --dev` for development tools.
+Environment activation is not required for `uv run`.
 
 Source code: <https://github.com/Denvic-Tech/db-connections>.
 
@@ -511,7 +523,7 @@ Available builder hooks:
 Run it from the repository virtual environment:
 
 ```bash
-python -m uvicorn app.main:app --reload --port 3000
+uv run --locked uvicorn app.main:app --reload --port 3000
 ```
 
 After startup, inspect:
@@ -526,13 +538,13 @@ After startup, inspect:
 Run the complete test suite:
 
 ```bash
-python -m pytest
+uv run --locked pytest
 ```
 
 If Docker-backed services are unavailable:
 
 ```bash
-python -m pytest -m "not docker_required"
+uv run --locked pytest -m "not docker_required"
 ```
 
 ## Publishing to PyPI
@@ -540,21 +552,21 @@ python -m pytest -m "not docker_required"
 Build the distributions first:
 
 ```bash
-python -m build
+uv build
 ```
 
 For a local maintainer release, set `PYPI_API_TOKEN` in the environment (or in a
 local ignored `.env` file) and run:
 
 ```bash
-python scripts/upload_builds.py
+uv run --locked python scripts/upload_builds.py
 ```
 
 The helper validates the artifacts with `twine check` and then publishes them to
 PyPI. TestPyPI can be selected explicitly:
 
 ```bash
-python scripts/upload_builds.py --repository testpypi
+uv run --locked python scripts/upload_builds.py --repository testpypi
 ```
 
 For automated GitHub releases, PyPI Trusted Publishing/OIDC is preferred over a

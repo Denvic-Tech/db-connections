@@ -43,14 +43,26 @@ router мутировал общее состояние модулей.
 Установка напрямую из GitHub:
 
 ```bash
-python -m pip install git+https://github.com/Denvic-Tech/db-connections.git
+uv add git+https://github.com/Denvic-Tech/db-connections.git
 ```
 
-Для локальной разработки с драйверами, async-адаптерами и test tooling:
+Для локальной разработки установите [uv](https://docs.astral.sh/uv/getting-started/installation/)
+и выполните из корня репозитория:
 
 ```bash
-python -m pip install -e .[drivers,async,test,s3]
+uv sync --locked
 ```
+
+`uv sync` создаёт или обновляет `.venv` и устанавливает библиотеку в editable-режиме.
+Группа `dev` включена по умолчанию: драйверы, async-адаптеры, S3, тесты,
+линтеры, demo API и инструменты публикации. `.python-version` выбирает Python 3.13
+для разработки; библиотека по-прежнему поддерживает Python 3.11+.
+
+Зависимости объявлены в `pyproject.toml`, точные версии закреплены в `uv.lock`.
+Оба файла нужно хранить в Git. После изменения зависимостей выполните `uv lock`;
+для намеренного обновления версий — `uv lock --upgrade`, затем `uv sync --locked`.
+Добавляйте зависимости через `uv add`, инструменты разработки — через `uv add --dev`.
+Активация окружения для `uv run` не требуется.
 
 Исходный код: <https://github.com/Denvic-Tech/db-connections>.
 
@@ -510,7 +522,7 @@ extension = (
 Запускать нужно через virtual environment репозитория:
 
 ```bash
-python -m uvicorn app.main:app --reload --port 3000
+uv run --locked uvicorn app.main:app --reload --port 3000
 ```
 
 После запуска можно посмотреть:
@@ -525,13 +537,13 @@ python -m uvicorn app.main:app --reload --port 3000
 Запуск полного набора тестов:
 
 ```bash
-python -m pytest
+uv run --locked pytest
 ```
 
 Если Docker-based сервисы недоступны:
 
 ```bash
-python -m pytest -m "not docker_required"
+uv run --locked pytest -m "not docker_required"
 ```
 
 ## Публикация в PyPI
@@ -539,21 +551,21 @@ python -m pytest -m "not docker_required"
 Сначала соберите дистрибутивы:
 
 ```bash
-python -m build
+uv build
 ```
 
 Для локальной публикации maintainer-ом задайте `PYPI_API_TOKEN` в окружении
 (или в локальном игнорируемом `.env`) и выполните:
 
 ```bash
-python scripts/upload_builds.py
+uv run --locked python scripts/upload_builds.py
 ```
 
 Helper сначала проверяет артефакты через `twine check`, затем публикует их в
 PyPI. Для проверки через TestPyPI можно явно выбрать repository:
 
 ```bash
-python scripts/upload_builds.py --repository testpypi
+uv run --locked python scripts/upload_builds.py --repository testpypi
 ```
 
 Для автоматической публикации из GitHub рекомендуется PyPI Trusted
